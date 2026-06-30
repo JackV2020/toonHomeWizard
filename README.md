@@ -21,6 +21,7 @@ On the Toon app screen you click a setup button on the left to enter the IP addr
 
 During entering a valid IP address you will be able to modify the default name of the device which appears and more.
 See screenshot 3.
+<br>When you edit a saved device you will also see a delete button.
 
 There is a setup button <img src='./drawables/settings.png' width="20" height="20"> at the bottom right to access a screen with some app settings.
 <br>When you have a P1 Meter Active, you have an extra option to activate Batteries functionality (Batterijen Y/N). See screenshot 4.
@@ -49,6 +50,7 @@ In short to add a battery:
     - it should be fine in a minute
   
 During the "Log In" phase a login is created in the battery to enable the app to collect data.
+<br>When you edit a saved device you will also see a delete button.
 When you later decide to delete the Battery and the physical battery is still online the login will be removed from the physical battery.
 When you delete the Battery while it is offline the login remains in the battery and will be replaced when you add it to the Toon app again.
 <br>Note that every Toon has a unique hardware specific address and that is used in the login name so you can add 1 battery to more that 1 Toon.
