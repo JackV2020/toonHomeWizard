@@ -38,15 +38,15 @@ When you click the blue button you get the Toon app screen with 4 icons for 4 ba
 
 In short to add a battery:
 
-  - on you physical battery you find a round button just above the led strip, check that
-  - find the Battery IP address like 192.168.2.123 in the app on your phone
-  - on your phone you make sure that the switch Koppelingsknop is off, so to the left and not green
-  - put the IP address in a Battery setup and give it a name like you did for an Enegery Socket
+    - on you physical battery you find a round button just above the led strip, check that
+    - find the Battery IP address like 192.168.2.123 in the app on your phone
+    - on your phone you make sure that the switch Koppelingsknop is off, so to the left and not green
+    - put the IP address in a Battery setup and give it a name like you did for an Enegery Socket
         (see screenshot 8)
-  - click the "Save" button and wait for the button to turn yellow and change to "Log In"
-  - click that "Log In" button and after 5 seconds touch the button on the physical battery
-  - when you did things right the battery may still be red for a while because there is no data yet
-  - it should be fine in a minute
+    - click the "Save" button and wait for the button to turn yellow and change to "Log In"
+    - click that "Log In" button and after 5 seconds touch the button on the physical battery
+    - when you did things right the battery may still be red for a while because there is no data yet
+    - it should be fine in a minute
   
 During the "Log In" phase a login is created in the battery to enable the app to collect data.
 When you later decide to delete the Battery and the physical battery is still online the login will be removed from the physical battery.
