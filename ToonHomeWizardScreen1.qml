@@ -3,9 +3,9 @@ import qb.components 1.0
 import BasicUIControls 1.0
 
 Screen {
-  id : homeWizardScreen
-  screenTitle : qsTr("HomeWizard")
-  
+  id : homeWizardScreen1
+  screenTitle : qsTr("HomeWizard Sockets & P1 Meter")
+
 // ---- Properties
 
 // -------- Control properties
@@ -50,6 +50,8 @@ Screen {
 //  List all properties of some object to find what you can change
 //      app.dumpProperties(scrollbar.childrenRect, "scrollbar.childrenRect")
 //      app.dumpProperties(deviceOn_7, "deviceOn_7")
+
+      app.activeScreen = 1
 
       app.startGetHomeWizardsTimerTimerSpeed(app.syncFast)
 
@@ -141,7 +143,9 @@ Screen {
       p1.checked = (app.homeWizardDataOnTile == app.homeWizardDataOnTileText)
       p2.checked = (app.homeWizardDataOnTile == app.homeWizardDataOnTileNow)
       p3.checked = (app.homeWizardDataOnTile == app.homeWizardDataOnTileP1Meter)
+      p4.checked = (app.homeWizardDataOnTile == app.homeWizardDataOnTileP1MeterBatteryLevel)
       p3.visible = app.deviceActive[8]
+      p4.visible = p3.visible && app.batteriesInApp
 
       // k1 .. k5 for kWh selection
       k1.checked = (app.kWhColumn == app.kWhToday)
@@ -155,6 +159,12 @@ Screen {
       // w1 .. w2 for wifi strength scale
       w1.checked = (app.wifidBm)
       w2.checked = (! app.wifidBm)
+
+      batteriesScreenButton.visible = app.batteriesInApp && app.deviceActive[8]
+
+      batteriesInAppText.visible = app.deviceActive[8]
+      batteriesInAppCheckBox.visible = app.deviceActive[8]
+      batteriesInAppCheckBoxText.text = app.batteriesInApp ? "Y" : "N"
 
     }
   }
@@ -184,7 +194,7 @@ Screen {
         result = app.deviceKWH[index].toFixed(app.kWhDecimals)
     }
     // just after startup every app.deviceKWH[index] is 0 and calculated results are negative ;-)
-    if ( result < 0 ) { result = 0 } 
+    if ( result < 0 ) { result = 0 }
     if ( index == 9 ) { result = (result * -1).toFixed(app.kWhDecimals) } // this is production to net
     return result + " kWh"
   }
@@ -192,6 +202,11 @@ Screen {
   function updateScreenData() {
 
     if ( activeMe ) {
+
+      var showError = ! ( app.batteryOke[0] && app.batteryOke[1] &&
+                              app.batteryOke[2] && app.batteryOke[3] )
+
+      batteriesScreenButton.buttonActiveColor = showError ? app.errorColor : "#dcdcdc"
 
       setup_IP_0.buttonActiveColor = app.deviceOke[0] ? "#cdcdcd" : app.errorColor
       setup_IP_1.buttonActiveColor = app.deviceOke[1] ? "#cdcdcd" : app.errorColor
@@ -439,6 +454,51 @@ Screen {
     onClicked : { deviceSettingsPanel.editDeviceSettings(8) }
     Image {
     source : "file:///qmf/qml/apps/toonHomeWizard/drawables/p1meter.png"
+    }
+  }
+
+// ------------ Batteries screen Button
+
+  Rectangle {
+    id : blockTerugButton
+    height : rowHeight * 1.5
+    width : rowHeight * 4
+    color : "#dcdcdc"
+    anchors {
+        bottom : parent.top
+        left : parent.left
+        leftMargin : rowHeight * 2
+    }
+    // block clicks to all items in the back
+    MouseArea {
+      anchors.fill : parent
+      acceptedButtons : Qt.AllButtons
+      propagateComposedEvents: false
+    }
+  }
+
+  YaLabel {
+    id : batteriesScreenButton
+    buttonBorderWidth : buttonborderwidth
+    height : rowHeight * 1.5
+    width : rowHeight * 4
+    buttonActiveColor : "#dcdcdc"
+    buttonHoverColor : buttonActiveColor
+    buttonSelectedColor : buttonActiveColor
+    hoveringEnabled : isNxt
+    anchors {
+        bottom : parent.top
+        left : parent.left
+        bottomMargin : rowHeight * -0.5
+        leftMargin : rowHeight * 2
+    }
+    onClicked : { stage.openFullscreen(app.homeWizardScreen2URL); }
+    Image {
+      id : batteriesScreenPicture
+      source : "file:///qmf/qml/apps/toonHomeWizard/drawables/batteries.png"
+      sourceSize.width: rowHeight * 1.5
+      sourceSize.height: rowHeight * 1.5
+      anchors.centerIn : parent
     }
   }
 
@@ -1670,6 +1730,8 @@ Screen {
       appSetupScreen.visible = true
       deviceSettingsPanel.visible = false
       deviceSettingsPanelHelp.visible = false
+      p3.visible = app.deviceActive[8]
+      p4.visible = p3.visible && app.batteriesInApp
       var today = new Date();
       var strTime=("00"+today.getHours()).slice(-2)+":"+("00"+(today.getMinutes())).slice(-2)
       var strDate=days[today.getDay()] + " "+("00"+today.getDate()).slice(-2)+"-"+("00"+(today.getMonth()+1)).slice(-2)+"-"+today.getFullYear()
@@ -1725,6 +1787,7 @@ Screen {
       if ( p1.checked ) { app.homeWizardDataOnTile = app.homeWizardDataOnTileText }
       if ( p2.checked ) { app.homeWizardDataOnTile = app.homeWizardDataOnTileNow }
       if ( p3.checked ) { app.homeWizardDataOnTile = app.homeWizardDataOnTileP1Meter }
+      if ( p4.checked ) { app.homeWizardDataOnTile = app.homeWizardDataOnTileP1MeterBatteryLevel }
 
       if ( k1.checked ) { app.kWhColumn = app.kWhToday }
       if ( k2.checked ) { app.kWhColumn = app.kWhWeek }
@@ -1736,7 +1799,8 @@ Screen {
 
       app.wifidBm = w1.checked
 
-      updateScreenConfiguration()
+      app.batteriesInApp = batteriesInAppCheckBoxText.text == "Y"
+
       app.saveSettings()
 
       appSetupScreen.visible = false
@@ -1749,7 +1813,7 @@ Screen {
     Rectangle {
       id : tileFormatRadioButtons
       width : 300
-      height : isNxt ? 175 : 140 
+      height : isNxt ? 150 : 120
       border.width : 0
       color : "#dcdcdc"
       anchors{
@@ -1764,7 +1828,7 @@ Screen {
         spacing : isNxt ? 5 : 4
         Text {
           text : "Tile:"
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
           font.underline : true
         }
 
@@ -1773,7 +1837,7 @@ Screen {
         Item {
           id : r1
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -1782,9 +1846,9 @@ Screen {
 
             Rectangle {
               id : rect_1
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -1801,9 +1865,7 @@ Screen {
 
             Text {
               text : "Ring"
-              anchors {
-                verticalCenter : rect_1.verticalCenter
-              }
+              anchors.verticalCenter : rect_1.verticalCenter
             }
           }
 
@@ -1822,7 +1884,7 @@ Screen {
         Item {
           id : r2
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -1831,9 +1893,9 @@ Screen {
 
             Rectangle {
               id : rect_2
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -1869,7 +1931,7 @@ Screen {
         Item {
           id : r3
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -1878,9 +1940,9 @@ Screen {
 
             Rectangle {
               id : rect_3
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2004,7 +2066,7 @@ Screen {
 
         Text {
           text : "Tile Data:"
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
           font.underline : true
         }
 
@@ -2013,7 +2075,7 @@ Screen {
         Item {
           id : p0
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2022,9 +2084,9 @@ Screen {
 
             Rectangle {
               id : rect_p0
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2052,6 +2114,7 @@ Screen {
               p1.checked = false
               p2.checked = false
               p3.checked = false
+              p4.checked = false
             }
           }
         }
@@ -2061,7 +2124,7 @@ Screen {
         Item {
           id : p1
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2070,9 +2133,9 @@ Screen {
 
             Rectangle {
               id : rect_p1
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2100,6 +2163,7 @@ Screen {
               p1.checked = true
               p2.checked = false
               p3.checked = false
+              p4.checked = false
             }
           }
         }
@@ -2109,7 +2173,7 @@ Screen {
         Item {
           id : p2
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2118,9 +2182,9 @@ Screen {
 
             Rectangle {
               id : rect_p2
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2149,6 +2213,7 @@ Screen {
               p1.checked = false
               p2.checked = true
               p3.checked = false
+              p4.checked = false
             }
           }
 
@@ -2159,9 +2224,7 @@ Screen {
         Item {
           id : p3
           width : 150
-          height : isNxt ? 40 : 32
-
-          visible : false
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2170,9 +2233,9 @@ Screen {
 
             Rectangle {
               id : rect_p3
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2200,6 +2263,57 @@ Screen {
               p1.checked = false
               p2.checked = false
               p3.checked = true
+              p4.checked = false
+            }
+          }
+
+        } // end radio
+
+// ---- Radio 4
+
+        Item {
+          id : p4
+          width : 150
+          height : isNxt ? 35 : 28
+
+          property bool checked : false
+
+          Row {
+            spacing : 6
+
+            Rectangle {
+              id : rect_p4
+              width : 26
+              height : 26
+              radius : 13
+              border.width : 1
+              color : "transparent"
+
+              Rectangle {
+                anchors {
+                  centerIn : parent
+                }
+                width : 16
+                height : 16
+                radius : 8
+                color : p4.checked ? "black" : "transparent"
+              }
+            }
+
+            Text {
+              text : "P1 Meter Watt, Batterij % & Watt"
+              anchors.verticalCenter : rect_p4.verticalCenter
+            }
+          }
+
+          MouseArea {
+            anchors.fill : parent
+            onClicked : {
+              p0.checked = false
+              p1.checked = false
+              p2.checked = false
+              p3.checked = false
+              p4.checked = true
             }
           }
 
@@ -2226,7 +2340,7 @@ Screen {
         spacing : isNxt ? 5 : 4
         Text {
           text : "kWh:"
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
           font.underline : true
         }
 
@@ -2235,7 +2349,7 @@ Screen {
         Item {
           id : k1
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2244,9 +2358,9 @@ Screen {
 
             Rectangle {
               id : rect_k1
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2284,7 +2398,7 @@ Screen {
         Item {
           id : k2
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2293,9 +2407,9 @@ Screen {
 
             Rectangle {
               id : rect_k2
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2333,7 +2447,7 @@ Screen {
         Item {
           id : k3
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2342,9 +2456,9 @@ Screen {
 
             Rectangle {
               id : rect_k3
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2382,7 +2496,7 @@ Screen {
         Item {
           id : k4
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2391,9 +2505,9 @@ Screen {
 
             Rectangle {
               id : rect_k4
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2431,7 +2545,7 @@ Screen {
         Item {
           id : k5
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2440,9 +2554,9 @@ Screen {
 
             Rectangle {
               id : rect_k5
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2490,12 +2604,12 @@ Screen {
       anchors {
         top : kWhColumnRadioButtons.bottom
         left : kWhColumnRadioButtons.left
-        topMargin : rowHeight / 2
+//        topMargin : rowHeight / 2
       }
       Text {
         id : kWhDecimalsRectangleText
         text : "kWh Decimalen:"
-        height : isNxt ? 40 : 32
+        height : isNxt ? 35 : 28
         font.underline : true
       }
 
@@ -2529,7 +2643,7 @@ Screen {
 
       Text {
         id : kWhDecimalsvalue
-        height : isNxt ? 40 : 32
+        height : isNxt ? 35 : 28
         anchors {
           left : kWhDecimalsMin.right
           leftMargin : isNxt ? 20 : 16
@@ -2581,13 +2695,14 @@ Screen {
       anchors {
         left : kWhDecimalsRectangle.left
         top : kWhDecimalsRectangle.bottom
+        topMargin : isNxt ? 10 : 8
       }
       Column {
 
         spacing : isNxt ? 5 : 4
         Text {
           text : "WiFi:"
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
           font.underline : true
         }
 
@@ -2596,7 +2711,7 @@ Screen {
         Item {
           id : w1
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2605,9 +2720,9 @@ Screen {
 
             Rectangle {
               id : rect_w1
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2642,7 +2757,7 @@ Screen {
         Item {
           id : w2
           width : 150
-          height : isNxt ? 40 : 32
+          height : isNxt ? 35 : 28
 
           property bool checked : false
 
@@ -2651,9 +2766,9 @@ Screen {
 
             Rectangle {
               id : rect_w2
-              width : 32
-              height : 32
-              radius : 16
+              width : 26
+              height : 26
+              radius : 13
               border.width : 1
               color : "transparent"
 
@@ -2681,6 +2796,53 @@ Screen {
               w2.checked = true
             }
           }
+        }
+      }
+    }
+
+// ---------------- Checkbox app.batteriesInApp
+
+    Text {
+      id : batteriesInAppText
+      anchors {
+        top : wifidBmRadioButtons.bottom
+        left : wifidBmRadioButtons.left
+      }
+      text : "Batterijen Y/N:"
+      height : isNxt ? 35 : 28
+      font.underline : true
+    }
+
+    Rectangle {
+      id: batteriesInAppCheckBox
+      height : 32
+      width : 32
+      anchors {
+        top : batteriesInAppText.top
+        left : batteriesInAppText.right
+        leftMargin : isNxt ? 20 : 16
+      }
+      border.width : 1
+      color : "#cdcdcd"
+      Text {
+        id : batteriesInAppCheckBoxText
+        anchors.centerIn : parent
+        text : "N"
+      }
+      MouseArea {
+        anchors.fill: parent
+        onClicked : {
+          batteriesInAppCheckBoxText.text = ( batteriesInAppCheckBoxText.text == "N") ? "Y" : "N"
+          if (batteriesInAppCheckBoxText.text == "Y") {
+            batteriesScreenButton.visible = true
+            app.controlToonHomeWizardBatteriesProcess("Start")
+          } else {
+            batteriesScreenButton.visible = false
+            app.controlToonHomeWizardBatteriesProcess("Stop")
+          }
+          p4.visible = batteriesInAppCheckBoxText.text == "Y"
+          if ( (! p4.visible ) && p4.checked ) { p3.checked = true ; p4.checked = false }
+          if ( p4.visible && p3.checked ) { p3.checked = false ; p4.checked = true }
         }
       }
     }
@@ -2722,7 +2884,7 @@ Screen {
         width : 2
         color : "black"
       }
-      color : "red"
+      color : "green"
       anchors {
         top : saveButtonDP.top
         right : saveButtonDP.left
@@ -2835,6 +2997,8 @@ Screen {
 
       deviceSettingsPanelTitle.text = p1Meter ? "P1 Meter Settings" : "Energy Socket " + (deviceIndex + 1) + " Settings"
 
+      deleteButton.color = "red"
+
       rectangleInputKWHOffset2.visible = p1Meter
 
       rectangleRingSegments.visible = ! p1Meter
@@ -2922,7 +3086,9 @@ Screen {
       if (validInput) { // Save settings
 
         if ( p1Meter  && deviceActive.font.strikeout
-          && ( app.homeWizardDataOnTile == app.homeWizardDataOnTileP1Meter ) ) {
+          &&  ( ( app.homeWizardDataOnTile == app.homeWizardDataOnTileP1Meter ) ||
+                ( app.homeWizardDataOnTile == app.homeWizardDataOnTileP1MeterBatteryLevel ) )
+          ) {
           // p1 meter disabled & tile shows p1 meter data so reset to logo
           app.homeWizardDataOnTile = app.homeWizardDataOnTileLogo
         }
@@ -2940,6 +3106,8 @@ Screen {
 
         app.deviceActive[deviceIndex] = ! deviceActive.font.strikeout
 
+        if ( ! app.deviceActive[deviceIndex] ) { app.deviceOke[deviceIndex] = true}
+
         if (! app.deviceActive[deviceIndex] ) {
           app.deviceOn[deviceIndex] = false
         }
@@ -2951,9 +3119,11 @@ Screen {
 
           app.deviceKWHYesterday[deviceIndex] = app.deviceKWH[deviceIndex]
           app.deviceKWHLastWeek[deviceIndex] =  app.deviceKWH[deviceIndex]
+          app.deviceKWHLastMonth[deviceIndex] =  app.deviceKWH[deviceIndex]
           if (deviceIndex == 8) {
             app.deviceKWHYesterday[9] = app.deviceKWH[9]
             app.deviceKWHLastWeek[9] = app.deviceKWH[9]
+            app.deviceKWHLastMonth[9] = app.deviceKWH[9]
           }
         }
         debug && app.log("Screen Save Device Settings")
@@ -3537,7 +3707,7 @@ Screen {
 
     }
 
-// ------------ deviceSettingsPanel Quit, Save and Help ? Buttons
+// ------------ deviceSettingsPanel Delete, Quit, Save and Help ? Buttons
 
     Rectangle {
       id : helpButton
@@ -3601,7 +3771,7 @@ Screen {
         width : 2
         color : "black"
       }
-      color : "red"
+      color : "green"
       anchors {
         top : saveButton.top
         right : saveButton.left
@@ -3618,6 +3788,64 @@ Screen {
         }
       }
     }
+
+    Rectangle {
+      id : deleteButton
+      height : rowHeight
+      width : buttonWidth
+      radius : 8
+      border {
+        width : 2
+        color : "black"
+      }
+      color : "green"
+      anchors {
+        top : quitButton.top
+        right : quitButton.left
+        rightMargin : 50
+      }
+      Text { anchors.centerIn : parent ; text : "Delete" }
+
+      MouseArea {
+        anchors.fill : parent
+        onClicked : {
+          if (deleteButton.color == "#ff0000" ) { // "red"
+            deleteButton.color = "yellow"
+          } else {
+            app.deviceIP[deviceSettingsPanel.deviceIndex] = "0.0.0.0"
+            app.deviceKWHYesterday[deviceSettingsPanel.deviceIndex] = 0
+            app.deviceKWHLastWeek[deviceSettingsPanel.deviceIndex] = 0
+            app.deviceKWHLastMonth[deviceSettingsPanel.deviceIndex] = 0
+            app.deviceKWHOffset[deviceSettingsPanel.deviceIndex] = 0
+            app.deviceActive[deviceSettingsPanel.deviceIndex] = false
+            app.deviceVisible[deviceSettingsPanel.deviceIndex] = false
+            app.deviceSwitchEnable[deviceSettingsPanel.deviceIndex] = true
+            app.deviceOke[deviceSettingsPanel.deviceIndex] =  true
+            app.deviceOn[deviceSettingsPanel.deviceIndex] = false
+            app.deviceWatts[deviceSettingsPanel.deviceIndex] = 0
+            app.device_wifi[deviceSettingsPanel.deviceIndex] = 0
+            if ( deviceSettingsPanel.deviceIndex == 8 ) {
+              app.deviceName[deviceSettingsPanel.deviceIndex] = "P1 Meter"
+              app.deviceKWHYesterday[deviceSettingsPanel.deviceIndex+1] = 0
+              app.deviceKWHLastWeek[deviceSettingsPanel.deviceIndex+1] = 0
+              app.deviceKWHLastMonth[deviceSettingsPanel.deviceIndex+1] = 0
+              app.deviceKWHOffset[deviceSettingsPanel.deviceIndex+1] = 0
+            } else {
+              app.deviceName[deviceSettingsPanel.deviceIndex] = "Energy Socket " + ( deviceSettingsPanel.deviceIndex + 1)
+            }
+
+            app.settingsActive = false
+            Qt.inputMethod.hide()
+            deviceSettingsPanel.visible = false
+
+            app.saveSettings()
+            updateScreenConfiguration()
+            updateScreenData()
+          }
+        }
+      }
+    }
+
 
   }
 
@@ -3668,50 +3896,52 @@ Screen {
         font.pixelSize : isNxt ? 20 : 16
         font.bold : true
         text :
-          "Tot 8 HomeWizard Energy Sockets uitlezen en bedienen en 1 P1 Meter uitlezen."
-        + "\n"
-        + "\nOm een Energy Socket of je P1 meter module toe te voegen volg je deze stappen:"
-        + "\n"
-        + "\nIn de HomeWizard APP op je telefoon/tablet:"
-        + "\n  - zoek in de settings naar je Energy Socket of P1 Meter en doe het volgende"
-        + "\n  - ga naar {...}, activeer de schakelaar en vind its lager een IP-adres"
-        + "\n  - dat IP-adres als '192.168.2.123' heb je nodig in de volgende stappen"
-        + "\n"
-        + "\nIn deze APP op je Toon:"
-        + "\n  - verlaat dit scherm (>>), klik op een Energy Socket of de P1 Meter en..."
-        + "\n  - met het vraagteken rechtsboven kun je dit informatie scherm weer oproepen"
-        + "\n  - bij een Energy Socket staat rechts het tegel segment dat er bij hoort"
-        + "\n  - vul het IP-adres in bij 'IP Adres' en wijzig de naam bij 'Naam'"
-        + "\n  - klik op 'Active' om de doorhaling te verwijderen en de verbinding te maken"
-        + "\n  - klik op 'Visible' om het apparaat op je scherm te tonen of te verbergen"
-        + "\n"
-        + "\nZonder 'Visible' wordt wel data verzameld maar zie je het niet op je scherm."
-        + "\n    Het nut ? Stel je hebt 1 Socket, zet het IP-adres 4 x in de APP."
-        + "\n    Dan kleuren 4 van de 8 segmenten op het tegeltje."
-        + "\n"
-        + "\nMet Screen Switch in de stand 'Enable' kun je de knop op het scherm bedienen."
-        + "\nAls 'Enable' is doorgehaald wordt het knopje blauw en werkt het knopje niet meer."
-        + "\nIn de telefoon/tablet HomeWizard APP werkt je knop nog wel. Op Toon niet meer."
-        + "\n"
-        + "\nWil je in de Toon HomeWizard APP de kWh zien sinds een bepaalde Start kWh?"
-        + "\nVul dan het veld 'kWh Start' in."
-        + "\nDe Presets knoppen vullen of '0' of het huidige totaal in."
-        + "\n"
-        + "\nNieuw apparaat aangesloten? Dan wil je de dag, week en maand tellers resetten."
-        + "\nDeze beginnen op 0 na een reset en na het begin van een dag, week of maand."
-        + "\nDeze tellers zijn dus pas correct na het begin van een nieuwe dag, week of maand."
-        + "\n"
-        + "\nOp het APP scherm staat rechtsonder een knop voor algemene APP settings."
-        + "\nKies daar weergave settings voor het tegeltje en de kWh en WiFi signaalsterkte."
-        + "\n"
-        + "\n           >>> LET OP <<<"
-        + "\n"
-        + "\n    Als een HomeWizard niet kan worden uitlezen wordt de ring op het tegeltje rood."
-        + "\n    Op het APP scherm krijgt het apparaat met het probleem een rood randje."
-        + "\n    Vaak lost het zich binnen een minuut op. Duurt het langer?"
-        + "\n    Is de schakelaar bij {...} in de settings in de telefoon/tablet app nog actief?"
-        + "\n    Klopt het IP adres nog of is dat gewijzigd?"
-        + "\n\n\n\n"
+          "<b><font color='#0000ff'>&nbsp;&nbsp;Tot 8 HomeWizard Energy Sockets uitlezen en bedienen en 1 P1 Meter uitlezen.</font></b>"
+        + "<br>"
+        + "<br>Om een Energy Socket of je P1 Meter module toe te voegen volg je deze stappen:"
+        + "<br>"
+        + "<br><font color='#0000ff'><b>In de HomeWizard APP op je telefoon/tablet:</b></font>"
+        + "<br>&nbsp;&nbsp;- zoek in de settings naar je Energy Socket of P1 Meter en doe het volgende"
+        + "<br>&nbsp;&nbsp;- ga naar {...}, activeer de schakelaar en vind iets lager een IP-adres"
+        + "<br>&nbsp;&nbsp;- dat IP-adres als '192.168.2.123' heb je nodig in de volgende stappen"
+        + "<br>"
+        + "<br><font color='#0000ff'><b>In deze APP op je Toon:</b></font>"
+        + "<br>&nbsp;&nbsp;- verlaat dit scherm (knop rechtsboven), klik op een Energy Socket of P1 Meter en..."
+        + "<br>&nbsp;&nbsp;- met het vraagteken rechtsboven kun je dit informatie scherm weer oproepen"
+        + "<br>&nbsp;&nbsp;- bij een Energy Socket staat rechts het tegel segment dat er bij hoort"
+        + "<br>&nbsp;&nbsp;- vul het IP-adres in bij 'IP Adres' en wijzig de naam bij 'Naam'"
+        + "<br>&nbsp;&nbsp;- klik op 'Active' om de doorhaling te verwijderen en de verbinding te maken"
+        + "<br>&nbsp;&nbsp;- klik op 'Visible' om het apparaat op je scherm te tonen of te verbergen"
+        + "<br>&nbsp;&nbsp;- klik op 'Save' om de instellingen te bewaren"
+        + "<br>"
+        + "<br>Zonder 'Visible' wordt wel data verzameld maar zie je het niet op je scherm."
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Het nut ? Stel je hebt 1 Socket, zet het IP-adres 4 x in de APP."
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Dan kleuren 4 van de 8 segmenten op het tegeltje."
+        + "<br>"
+        + "<br>Met Screen Switch in de stand 'Enable' kun je de knop op het scherm bedienen."
+        + "<br>Als 'Enable' is doorgehaald wordt het knopje blauw en werkt het knopje niet meer."
+        + "<br>In de telefoon/tablet HomeWizard APP werkt je knop nog wel. Op Toon niet meer."
+        + "<br>"
+        + "<br>Wil je in de Toon HomeWizard APP de kWh zien sinds een bepaalde Start kWh?"
+        + "<br>Vul dan het veld 'kWh Start' in."
+        + "<br>De Presets knoppen vullen of '0' of het huidige totaal in."
+        + "<br>"
+        + "<br>Nieuw apparaat aangesloten? Dan wil je de dag, week en maand tellers resetten."
+        + "<br>Deze beginnen op 0 na een reset en na het begin van een dag, week of maand."
+        + "<br>Deze tellers zijn dus pas correct na het begin van een nieuwe dag, week of maand."
+        + "<br>"
+        + "<br>Op het APP scherm staat rechtsonder een knop voor algemene APP settings."
+        + "<br>Kies daar weergave settings voor het tegeltje en de kWh en WiFi signaalsterkte."
+        + "<br>"
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color='#ff3333'><b>&gt;&gt;&gt; <i>LET OP !</i> &lt;&lt;&lt; </b></font>"
+        + "<br>"
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Als een HomeWizard niet kan worden uitlezen wordt de ring op het tegeltje rood."
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Op het APP scherm krijgt het apparaat met het probleem een rood randje."
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Vaak lost het zich binnen een minuut op. Duurt het langer?"
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Is de schakelaar bij {...} in de settings in de telefoon/tablet app nog actief?"
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Klopt het IP adres nog of is dat gewijzigd?"
+        + "<br>&nbsp;&nbsp;&nbsp;&nbsp;Pas het eventueel aan en klik op 'Save'"
+        + "<br><br><br><br>"
       }
     }
 

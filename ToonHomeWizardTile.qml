@@ -1,4 +1,3 @@
-
 import QtQuick 2.1
 import qb.components 1.0
 
@@ -6,6 +5,8 @@ Tile {
   id : homeWizardTile
 
 // ---- properties
+
+  property bool debug : false // used to (de)activate app.log messages
 
 // configuration data fixed values
 
@@ -34,6 +35,20 @@ Tile {
     }
   }
 
+  Component.onCompleted: {
+      debug && app.log("Tile loaded", parent)
+  }
+
+  Component.onDestruction: {
+      debug && app.log("Tile unloaded")
+      if (app.batteriesInApp) {
+        debug && app.log("Stop Process")
+        app.controlToonHomeWizardBatteriesProcess("Stop")
+      }
+      debug && app.log("Stop Timer")
+      app.activeMe = false // stop main app Timer
+  }
+
   function updateTileData() {
 
     if (visible) {
@@ -53,7 +68,10 @@ Tile {
                               app.deviceOke[2] && app.deviceOke[3] &&
                               app.deviceOke[4] && app.deviceOke[5] &&
                               app.deviceOke[6] && app.deviceOke[7] &&
-                              app.deviceOke[8] )
+                              app.deviceOke[8] &&
+                              app.batteryOke[0] && app.batteryOke[1] &&
+                              app.batteryOke[2] && app.batteryOke[3]
+                              )
 
       ring.border.color = showFullRingError ? app.errorColor : app.tileRingColor
 
@@ -66,12 +84,34 @@ Tile {
       mask_6.visible = ! ( app.deviceOn[6] || showFullRing || showFullRingError )
       mask_7.visible = ! ( app.deviceOn[7] || showFullRing || showFullRingError )
 
-      if ( app.deviceOke[8] && (app.homeWizardDataOnTile == app.homeWizardDataOnTileP1Meter) ) {
+      if ( app.deviceOke[8] && (app.homeWizardDataOnTile >= app.homeWizardDataOnTileP1Meter) ) {
         // P1 Meter configured and oke
         tileLogo.visible = false
         tileButton.buttonText = Math.round(app.deviceWatts[8]) + " Watt"
-        tileButton.buttonText2 = ""
-        tileButton.buttonText2Stack = false
+        if (app.homeWizardDataOnTile == app.homeWizardDataOnTileP1Meter) {
+          tileButton.buttonText2 = ""
+          tileButton.buttonText2Stack = false
+        } else {
+          var count = 0
+          var level = 0
+          var watts = 0
+          var ii = 0
+          for (ii = 0 ; ii < 4 ; ii++ ) {
+            if (app.batteryActive[ii]) {
+              if ( app.batteryIP.indexOf(app.batteryIP[ii]) == ii ) {
+                count=count+1
+                level = level + app.batteryLevel[ii]
+                watts = watts + app.batteryWatts[ii]
+              }
+            }
+          }
+          if (count > 1) {
+            level = (level / count).toFixed(0)
+          }
+          watts = watts.toFixed(0)
+          tileButton.buttonText2 = level + " % " + watts + " Watt"
+          tileButton.buttonText2Stack = true
+        }
       } else {
         switch (app.homeWizardDataOnTile) {
         case app.homeWizardDataOnTileLogo:
@@ -243,7 +283,13 @@ Tile {
       verticalCenter : parent.verticalCenter
       horizontalCenter : parent.horizontalCenter
     }
-    onClicked : { stage.openFullscreen(app.homeWizardScreenURL);}
+    onClicked : {
+      if (app.activeScreen == 1) {
+        stage.openFullscreen(app.homeWizardScreen1URL)
+      } else {
+        stage.openFullscreen(app.homeWizardScreen2URL)
+      }
+    }
     Image {
       id : tileLogo
       visible : false
