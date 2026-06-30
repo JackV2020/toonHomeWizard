@@ -104,5 +104,12 @@ Thanks for reading and enjoy the HomeWizard app.
 <td>
 <img width="400" height="240" src="https://github.com/JackV2020/appData/blob/main/toonHomeWizardscreenshots/toonHomeWizard_screenshot_8.png">
 </td>
+<tr>
+<td>
+<img width="400" height="240" src="https://github.com/JackV2020/appData/blob/main/toonHomeWizardscreenshots/toonHomeWizard_screenshot_9.png">
+</td>
+<td>
+<img width="400" height="240" src="https://github.com/JackV2020/appData/blob/main/toonHomeWizardscreenshots/toonHomeWizard_screenshot_10.png">
+</td>
 </tr>
 </table>
